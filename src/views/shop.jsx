@@ -4,108 +4,72 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useClothingApi } from "../hooks/useClothingApi";
 import { useCart } from "../context/CartContext";
 
-// Cache-busting inline import selector guarantees styles load instantly
-import { useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-
-import { useClothingApi } from "../hooks/useClothingApi";
-import { useCart } from "../context/CartContext";
-
 function Shop() {
   const navigate = useNavigate();
-  const { products, loading, error } = useClothingApi();
-  const { cart, addToCart, removeFromCart } = useCart();
 
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [search, setSearch] = useState("");
+  const { products, loading, error } = useClothingApi();
+  const { cart, addToCart, removeFromCart } = useCart();
 
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isSearchInput, setIsSearchInput] = useState("");
+  /* --------------------------------
+     URL PARAMETERS
+  -------------------------------- */
+  const category = searchParams.get("category") || "all";
+  const sort = searchParams.get("sort") || "featured";
+  const searchUrlParam = searchParams.get("search") || "";
 
-  const [user, setUser] = useState(null);
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  /* --------------------------------
+     SEARCH STATE
+  -------------------------------- */
+  const [search, setSearch] = useState(searchUrlParam);
 
-  const [authView, setAuthView] = useState("login");
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [authError, setAuthError] = useState("");
-
-  const category =
-    searchParams.get("category") || "all";
-
-  const sort =
-    searchParams.get("sort") || "featured";
-
-  const searchUrlParam =
-    searchParams.get("search") || "";
-
-  /* =========================================================
-     CART COUNT
-  ========================================================= */
-
-  const totalCartItems = useMemo(() => {
-    return cart.reduce(
-      (total, item) => total + item.quantity,
-      0
-    );
-  }, [cart]);
-
-  /* =========================================================
-     FILTER / SEARCH / SORT
-  ========================================================= */
-
+  /* --------------------------------
+     FILTER & SORT PRODUCTS
+  -------------------------------- */
   const filteredAndSortedProducts = useMemo(() => {
-    if (!products) return [];
+    if (!products) {
+      return [];
+    }
 
     const activeSearchTerm = (
       search || searchUrlParam
     )
-      .toLowerCase()
-      .trim();
+      .trim()
+      .toLowerCase();
 
-    return [...products]
+    return products
       .filter((product) => {
-        const targetCategory =
-          category.toLowerCase();
+        const targetCategory = category.toLowerCase();
 
-        const productCategory = (
-          product.genderCategory || ""
-        ).toLowerCase();
-
-        const title = (
-          product.title ||
-          product.displayName ||
-          ""
-        ).toLowerCase();
+        const productCategory = product.genderCategory
+          ? String(product.genderCategory).toLowerCase()
+          : "";
 
         const matchesCategory =
           targetCategory === "all" ||
           productCategory === targetCategory;
 
+        const productTitle = String(
+          product.title || product.displayName || ""
+        ).toLowerCase();
+
         const matchesSearch =
           !activeSearchTerm ||
-          title.includes(activeSearchTerm);
+          productTitle.includes(activeSearchTerm);
 
-        return (
-          matchesCategory &&
-          matchesSearch
-        );
+        return matchesCategory && matchesSearch;
       })
       .sort((a, b) => {
+        const priceA = Number(a.price) || 0;
+        const priceB = Number(b.price) || 0;
+
         if (sort === "price-low-high") {
-          return (
-            Number(a.price) -
-            Number(b.price)
-          );
+          return priceA - priceB;
         }
 
         if (sort === "price-high-low") {
-          return (
-            Number(b.price) -
-            Number(a.price)
-          );
+          return priceB - priceA;
         }
 
         return 0;
@@ -118,1569 +82,757 @@ function Shop() {
     searchUrlParam,
   ]);
 
-  /* =========================================================
-     CATEGORY
-  ========================================================= */
-
-  const handleCategoryChange = (
-    newCategory
-  ) => {
-    const params = {
+  /* --------------------------------
+     CATEGORY CHANGE
+  -------------------------------- */
+  const handleCategoryChange = (newCategory) => {
+    const newParams = {
       category: newCategory,
       sort,
     };
 
-    if (searchUrlParam) {
-      params.search = searchUrlParam;
+    if (search.trim()) {
+      newParams.search = search.trim();
     }
 
-    setSearchParams(params);
+    setSearchParams(newParams);
   };
 
-  /* =========================================================
-     SORT
-  ========================================================= */
-
+  /* --------------------------------
+     SORT CHANGE
+  -------------------------------- */
   const handleSortChange = (newSort) => {
-    const params = {
+    const newParams = {
       category,
       sort: newSort,
     };
 
-    if (searchUrlParam) {
-      params.search = searchUrlParam;
+    if (search.trim()) {
+      newParams.search = search.trim();
     }
 
-    setSearchParams(params);
+    setSearchParams(newParams);
   };
 
-  /* =========================================================
-     AUTH
-  ========================================================= */
+  /* --------------------------------
+     SEARCH CHANGE
+  -------------------------------- */
+  const handleSearchChange = (event) => {
+    const value = event.target.value;
 
-  const resetAuthForm = () => {
-    setUsername("");
-    setEmail("");
-    setPassword("");
-    setAuthError("");
-    setShowAuthModal(false);
+    setSearch(value);
+
+    const newParams = {
+      category,
+      sort,
+    };
+
+    if (value.trim()) {
+      newParams.search = value.trim();
+    }
+
+    setSearchParams(newParams);
   };
 
-  const handleAuthSubmit = (e) => {
-    e.preventDefault();
-    setAuthError("");
-
-    if (authView === "signup") {
-      if (
-        !username.trim() ||
-        !email.trim() ||
-        !password
-      ) {
-        setAuthError(
-          "All fields are required."
-        );
-        return;
-      }
-
-      const normalizedEmail =
-        email.trim().toLowerCase();
-
-      const existingUser =
-        localStorage.getItem(
-          `user_${normalizedEmail}`
-        );
-
-      if (existingUser) {
-        setAuthError(
-          "An account with this email already exists. Please sign in."
-        );
-        return;
-      }
-
-      const newUser = {
-        username: username.trim(),
-        email: normalizedEmail,
-        password,
-      };
-
-      localStorage.setItem(
-        `user_${normalizedEmail}`,
-        JSON.stringify(newUser)
-      );
-
-      setUser({
-        name: newUser.username,
-        email: newUser.email,
-      });
-
-      resetAuthForm();
-      return;
-    }
-
-    if (
-      !email.trim() ||
-      !password
-    ) {
-      setAuthError(
-        "Please fill in all fields."
-      );
-      return;
-    }
-
-    const normalizedEmail =
-      email.trim().toLowerCase();
-
-    const savedUserRaw =
-      localStorage.getItem(
-        `user_${normalizedEmail}`
-      );
-
-    if (!savedUserRaw) {
-      setAuthError(
-        "No account found with this email. Please sign up."
-      );
-      return;
-    }
-
-    try {
-      const savedUser =
-        JSON.parse(savedUserRaw);
-
-      if (
-        savedUser.password !== password
-      ) {
-        setAuthError(
-          "Incorrect password. Please try again."
-        );
-        return;
-      }
-
-      setUser({
-        name: savedUser.username,
-        email: savedUser.email,
-      });
-
-      resetAuthForm();
-    } catch {
-      setAuthError(
-        "Unable to load your account."
-      );
-    }
+  /* --------------------------------
+     NAVIGATION
+  -------------------------------- */
+  const handleCartClick = () => {
+    navigate("/cart");
   };
 
-  /* =========================================================
+  const handleShopClick = () => {
+    navigate("/shop");
+  };
+
+  const handleProductClick = (productId) => {
+    navigate(`/product/${productId}`);
+  };
+
+  /* --------------------------------
      LOADING
-  ========================================================= */
-
+  -------------------------------- */
   if (loading) {
     return (
-      <div style={styles.loadingPage}>
-        <div style={styles.loadingText}>
-          LOADING COLLECTION...
-        </div>
+      <div className="shop-loading">
+        Loading products...
       </div>
     );
   }
 
-  /* =========================================================
+  /* --------------------------------
      ERROR
-  ========================================================= */
-
+  -------------------------------- */
   if (error) {
     return (
-      <div style={styles.loadingPage}>
-        <h2 style={{ color: "#eeeade" }}>
-          Error loading products
-        </h2>
-
-        <p style={{ color: "#77746d" }}>
-          {error}
-        </p>
-
-        <button
-          style={styles.goldButton}
-          onClick={() => navigate("/")}
-        >
-          BACK HOME
-        </button>
+      <div className="shop-error">
+        Error loading products: {error}
       </div>
     );
   }
 
-  /* =========================================================
+  /* --------------------------------
      PAGE
-  ========================================================= */
-
+  -------------------------------- */
   return (
-    <div style={styles.page}>
+    <div className="shop-page-wrapper">
 
-      {/* =====================================================
+      <style>{`
+        .shop-page-wrapper {
+          background-color: #000000;
+          min-height: 100vh;
+          font-family: inherit;
+          color: #ffffff;
+        }
+
+        /* ================================
+           NAVBAR
+        ================================= */
+
+        .luxury-navbar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 20px 4%;
+          background: #000000;
+          border-bottom: 1px solid #111111;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          z-index: 100;
+          height: 80px;
+          box-sizing: border-box;
+        }
+
+        .luxury-navbar .brand {
+          font-size: 1.2rem;
+          letter-spacing: 4px;
+          font-weight: 400;
+          color: #ffffff;
+        }
+
+        .luxury-navbar .brand span {
+          font-weight: 300;
+          color: #666666;
+          margin-left: 4px;
+        }
+
+        .luxury-navbar .nav-links {
+          display: flex;
+          gap: 30px;
+        }
+
+        .luxury-navbar .nav-links span {
+          font-size: 0.8rem;
+          letter-spacing: 2px;
+          color: #666666;
+          cursor: pointer;
+          transition: color 0.3s;
+        }
+
+        .luxury-navbar .nav-links span:hover,
+        .luxury-navbar .nav-links span.active-link {
+          color: #ffffff;
+        }
+
+        .luxury-navbar .nav-icons {
+          display: flex;
+          gap: 20px;
+          align-items: center;
+        }
+
+        .luxury-navbar .nav-icons button {
+          background: none;
+          border: none;
+          color: #ffffff;
+          font-size: 1.2rem;
+          cursor: pointer;
+          transition: color 0.3s;
+          outline: none;
+        }
+
+        .luxury-navbar .nav-icons button:hover {
+          color: #888888;
+        }
+
+        /* ================================
+           SHOP LAYOUT
+        ================================= */
+
+        .shop-container {
+          display: flex;
+          padding: 120px 4% 60px 4%;
+          gap: 40px;
+          background-color: #000000;
+          box-sizing: border-box;
+        }
+
+        /* ================================
+           SIDEBAR
+        ================================= */
+
+        .shop-sidebar {
+          width: 220px;
+          flex-shrink: 0;
+          position: sticky;
+          top: 120px;
+          height: fit-content;
+        }
+
+        .shop-sidebar h3 {
+          font-size: 0.85rem;
+          letter-spacing: 3px;
+          text-transform: uppercase;
+          margin-bottom: 25px;
+          color: #ffffff;
+          font-weight: 500;
+        }
+
+        .category-list {
+          list-style: none !important;
+          list-style-type: none !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .category-list li {
+          list-style: none !important;
+          list-style-type: none !important;
+          padding: 0 !important;
+          margin: 0 !important;
+        }
+
+        .category-list button {
+          background: none;
+          border: none;
+          color: #555555;
+          text-align: left;
+          font-size: 0.8rem;
+          letter-spacing: 2px;
+          text-transform: uppercase;
+          cursor: pointer;
+          padding: 4px 0;
+          transition: all 0.3s;
+          outline: none;
+          width: 100%;
+        }
+
+        .category-list button:hover,
+        .category-list button.active {
+          color: #ffffff;
+          padding-left: 6px;
+        }
+
+        /* ================================
+           CONTENT
+        ================================= */
+
+        .shop-content {
+          flex-grow: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 30px;
+          min-width: 0;
+        }
+
+        .shop-toolbar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 20px;
+          border-bottom: 1px solid #111111;
+          padding-bottom: 20px;
+        }
+
+        .search-input {
+          background: transparent;
+          border: 1px solid #222222;
+          color: #ffffff;
+          padding: 12px 20px;
+          font-size: 0.85rem;
+          letter-spacing: 1px;
+          outline: none;
+          width: 100%;
+          max-width: 350px;
+          box-sizing: border-box;
+        }
+
+        .search-input::placeholder {
+          color: #555555;
+        }
+
+        .search-input:focus {
+          border-color: #444444;
+        }
+
+        .sort-select {
+          background: #000000;
+          border: 1px solid #222222;
+          color: #ffffff;
+          padding: 12px 20px;
+          font-size: 0.85rem;
+          letter-spacing: 1px;
+          outline: none;
+          text-transform: uppercase;
+          cursor: pointer;
+        }
+
+        .sort-select option {
+          background: #000000;
+          color: #ffffff;
+        }
+
+        /* ================================
+           PRODUCTS GRID
+        ================================= */
+
+        .products-grid {
+          display: grid;
+          grid-template-columns: repeat(
+            auto-fill,
+            minmax(260px, 1fr)
+          );
+          gap: 40px 25px;
+        }
+
+        .product-card {
+          display: flex;
+          flex-direction: column;
+          background-color: #000000;
+          min-width: 0;
+        }
+
+        .product-image-wrapper {
+          position: relative;
+          width: 100%;
+          overflow: hidden;
+        }
+
+        .product-card img {
+          width: 100%;
+          aspect-ratio: 3 / 4;
+          object-fit: cover;
+          background-color: #111111;
+          filter: grayscale(15%);
+          transition: all 0.4s ease;
+          display: block;
+        }
+
+        .product-card:hover img {
+          filter: grayscale(0%);
+          transform: scale(1.01);
+        }
+
+        .product-info {
+          padding-top: 15px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .product-info h4 {
+          font-size: 0.85rem;
+          font-weight: 400;
+          letter-spacing: 1px;
+          margin: 0;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          color: #ffffff;
+        }
+
+        .product-info p {
+          font-size: 0.85rem;
+          color: #888888;
+          margin: 0;
+        }
+
+        /* ================================
+           CART
+        ================================= */
+
+        .cart-nav-btn {
+          position: relative;
+        }
+
+        .cart-badge-counter {
+          position: absolute;
+          top: -6px;
+          right: -8px;
+          background-color: #ff3b30;
+          color: #ffffff;
+          font-size: 0.6rem;
+          font-weight: 700;
+          min-width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          box-shadow: 0 0 0 2px #000000;
+        }
+
+        /* ================================
+           ADD / REMOVE BUTTON
+        ================================= */
+
+        .action-toggle-btn {
+          position: absolute;
+          bottom: 15px;
+          right: 15px;
+          background-color: rgba(0, 0, 0, 0.85);
+          color: #ffffff;
+          border: 1px solid #222222;
+          padding: 8px 16px;
+          font-size: 0.7rem;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          backdrop-filter: blur(4px);
+        }
+
+        .action-toggle-btn.add-state:hover {
+          background-color: #ffffff;
+          color: #000000;
+          border-color: #ffffff;
+        }
+
+        .action-toggle-btn.remove-state {
+          border-color: #ff3b30 !important;
+          color: #ff3b30 !important;
+        }
+
+        .action-toggle-btn.remove-state:hover {
+          background-color: #ff3b30 !important;
+          color: #ffffff !important;
+        }
+
+        /* ================================
+           NO PRODUCTS
+        ================================= */
+
+        .no-products {
+          padding: 60px 20px;
+          text-align: center;
+          color: #666666;
+          letter-spacing: 1px;
+        }
+
+        /* ================================
+           LOADING / ERROR
+        ================================= */
+
+        .shop-loading,
+        .shop-error {
+          min-height: 100vh;
+          background-color: #000000;
+          color: #ffffff;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          font-size: 0.9rem;
+          letter-spacing: 1px;
+        }
+
+        /* ================================
+           MOBILE
+        ================================= */
+
+        @media (max-width: 768px) {
+          .luxury-navbar {
+            padding: 20px;
+          }
+
+          .luxury-navbar .nav-links {
+            gap: 15px;
+          }
+
+          .shop-container {
+            flex-direction: column;
+            padding: 110px 20px 40px;
+          }
+
+          .shop-sidebar {
+            width: 100%;
+            position: static;
+          }
+
+          .category-list {
+            flex-direction: row;
+            flex-wrap: wrap;
+          }
+
+          .category-list li {
+            width: auto;
+          }
+
+          .shop-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .search-input {
+            max-width: none;
+          }
+
+          .products-grid {
+            grid-template-columns: repeat(
+              2,
+              minmax(0, 1fr)
+            );
+            gap: 25px 15px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .luxury-navbar .brand {
+            font-size: 1rem;
+            letter-spacing: 3px;
+          }
+
+          .luxury-navbar .nav-links {
+            gap: 10px;
+          }
+
+          .luxury-navbar .nav-links span {
+            font-size: 0.7rem;
+          }
+
+          .products-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+
+      {/* ================================
           NAVBAR
-      ===================================================== */}
+      ================================= */}
 
-      <nav style={styles.navbar}>
+      <nav className="luxury-navbar">
 
-        <div
-          style={styles.brand}
-          onClick={() => navigate("/")}
-        >
-          ATELIER
-          <span>NOIR</span>
+        <div className="brand">
+          SHOP<span>STORE</span>
         </div>
 
-        <div style={styles.navLinks}>
+        <div className="nav-links">
 
-          <button
-            style={styles.navLink}
-            onClick={() => navigate("/")}
+          <span
+            className="active-link"
+            onClick={handleShopClick}
           >
-            HOME
-          </button>
+            SHOP
+          </span>
 
-          <button
-            style={{
-              ...styles.navLink,
-              color: "#c5ae59",
-            }}
-            onClick={() =>
-              navigate("/shop")
-            }
-          >
-            COLLECTION
-          </button>
-
-          <a
-            href="#about"
-            style={styles.navLink}
-          >
-            ABOUT
-          </a>
-
-          <a
-            href="#contact"
-            style={styles.navLink}
-          >
-            CONTACT
-          </a>
+          <span onClick={handleCartClick}>
+            CART
+          </span>
 
         </div>
 
-        <div style={styles.navIcons}>
+        <div className="nav-icons">
 
           <button
-            style={styles.iconButton}
-            onClick={() =>
-              setIsSearchOpen(
-                !isSearchOpen
-              )
-            }
-          >
-            ⌕
-          </button>
-
-          <button
-            style={styles.iconButton}
-            onClick={() =>
-              setShowAuthModal(true)
-            }
-          >
-            {user ? "●" : "♙"}
-          </button>
-
-          <button
-            style={{
-              ...styles.iconButton,
-              position: "relative",
-            }}
-            onClick={() =>
-              navigate("/cart")
-            }
+            type="button"
+            className="cart-nav-btn"
+            onClick={handleCartClick}
+            aria-label="Open cart"
           >
             🛒
 
-            {totalCartItems > 0 && (
-              <span
-                style={styles.cartBadge}
-              >
-                {totalCartItems}
+            {cart.length > 0 && (
+              <span className="cart-badge-counter">
+                {cart.length}
               </span>
             )}
+
           </button>
 
         </div>
+
       </nav>
 
-      {/* =====================================================
-          SEARCH BAR
-      ===================================================== */}
+      {/* ================================
+          SHOP CONTAINER
+      ================================= */}
 
-      {isSearchOpen && (
-        <div style={styles.searchBar}>
-
-          <input
-            autoFocus
-            value={isSearchInput}
-            onChange={(e) =>
-              setIsSearchInput(
-                e.target.value
-              )
-            }
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                const value =
-                  isSearchInput.trim();
-
-                setSearch(value);
-
-                const params = {
-                  category,
-                  sort,
-                };
-
-                if (value) {
-                  params.search = value;
-                }
-
-                setSearchParams(params);
-                setIsSearchOpen(false);
-              }
-            }}
-            placeholder="SEARCH THE COLLECTION..."
-            style={
-              styles.searchBarInput
-            }
-          />
-
-          <button
-            style={styles.searchClose}
-            onClick={() =>
-              setIsSearchOpen(false)
-            }
-          >
-            ×
-          </button>
-
-        </div>
-      )}
-
-      {/* =====================================================
-          SHOP HERO
-      ===================================================== */}
-
-      <section style={styles.shopHero}>
-
-        <div>
-          <span style={styles.label}>
-            THE COLLECTION
-          </span>
-
-          <h1 style={styles.heroTitle}>
-            ALL
-            <br />
-            <span>ESSENTIALS.</span>
-          </h1>
-        </div>
-
-        <p style={styles.heroDescription}>
-          Carefully selected pieces that
-          balance contemporary design
-          with timeless sophistication.
-        </p>
-
-      </section>
-
-      {/* =====================================================
-          SHOP CONTENT
-      ===================================================== */}
-
-      <div style={styles.shopLayout}>
+      <div className="shop-container">
 
         {/* SIDEBAR */}
 
-        <aside style={styles.sidebar}>
+        <aside className="shop-sidebar">
 
-          <span style={styles.sidebarHeading}>
-            CATEGORIES
-          </span>
+          <h3>
+            Categories
+          </h3>
 
-          <div style={styles.categoryList}>
+          <ul className="category-list">
 
-            {[
-              "all",
-              "men",
-              "women",
-            ].map((cat) => (
+            {["all", "men", "women"].map((item) => (
+              <li key={item}>
 
-              <button
-                key={cat}
-                onClick={() =>
-                  handleCategoryChange(
-                    cat
-                  )
-                }
-                style={{
-                  ...styles.categoryButton,
-                  color:
-                    category === cat
-                      ? "#c5ae59"
-                      : "#77746d",
-                  borderBottom:
-                    category === cat
-                      ? "1px solid #81723c"
-                      : "1px solid transparent",
-                }}
-              >
-                {cat.toUpperCase()}
-              </button>
+                <button
+                  type="button"
+                  className={
+                    category.toLowerCase() === item
+                      ? "active"
+                      : ""
+                  }
+                  onClick={() =>
+                    handleCategoryChange(item)
+                  }
+                >
+                  {item}
+                </button>
 
+              </li>
             ))}
 
-          </div>
-
-          <div
-            style={styles.sidebarDivider}
-          />
-
-          <span
-            style={styles.productCount}
-          >
-            {
-              filteredAndSortedProducts.length
-            }{" "}
-            PRODUCTS
-          </span>
+          </ul>
 
         </aside>
 
-        {/* PRODUCTS */}
+        {/* MAIN CONTENT */}
 
-        <main style={styles.productsArea}>
+        <main className="shop-content">
 
           {/* TOOLBAR */}
 
-          <div style={styles.toolbar}>
+          <div className="shop-toolbar">
 
             <input
-              value={
-                search || searchUrlParam
-              }
-              onChange={(e) => {
-                const value =
-                  e.target.value;
-
-                setSearch(value);
-
-                const params = {
-                  category,
-                  sort,
-                };
-
-                if (value.trim()) {
-                  params.search =
-                    value.trim();
-                }
-
-                setSearchParams(params);
-              }}
-              placeholder="Search products..."
-              style={styles.searchInput}
+              type="search"
+              className="search-input"
+              placeholder="SEARCH PRODUCTS..."
+              value={search}
+              onChange={handleSearchChange}
+              aria-label="Search products"
             />
 
             <select
               value={sort}
-              onChange={(e) =>
-                handleSortChange(
-                  e.target.value
-                )
+              onChange={(event) =>
+                handleSortChange(event.target.value)
               }
-              style={styles.sortSelect}
+              className="sort-select"
+              aria-label="Sort products"
             >
+
               <option value="featured">
-                FEATURED
+                Featured
               </option>
 
               <option value="price-low-high">
-                PRICE: LOW TO HIGH
+                Price: Low to High
               </option>
 
               <option value="price-high-low">
-                PRICE: HIGH TO LOW
+                Price: High to Low
               </option>
+
             </select>
 
           </div>
 
-          {/* =================================================
-              PRODUCT GRID
-          ================================================= */}
+          {/* PRODUCT RESULTS */}
 
-          {filteredAndSortedProducts.length ===
-          0 ? (
+          {filteredAndSortedProducts.length === 0 ? (
 
-            <div style={styles.empty}>
-              <span style={styles.label}>
-                COLLECTION
-              </span>
-
-              <h2>
-                NO PRODUCTS FOUND
-              </h2>
-
-              <p>
-                Try another search or
-                category.
-              </p>
+            <div className="no-products">
+              No products found matching your criteria.
             </div>
 
           ) : (
 
-            <div style={styles.productGrid}>
+            <div className="products-grid">
 
-              {filteredAndSortedProducts.map(
-                (product, index) => {
+              {filteredAndSortedProducts.map((product) => {
 
-                  const isProductInCart =
-                    cart.some(
-                      (item) =>
-                        item.id ===
-                        product.id
-                    );
+                const isProductInCart = cart.some(
+                  (item) => item.id === product.id
+                );
 
-                  return (
+                const productTitle =
+                  product.displayName ||
+                  product.title ||
+                  "Product";
 
-                    <article
-                      key={product.id}
-                      style={
-                        styles.productCard
-                      }
-                    >
+                const productPrice =
+                  Number(product.price) || 0;
 
-                      {/* IMAGE */}
+                return (
+                  <article
+                    className="product-card"
+                    key={product.id}
+                  >
 
-                      <div
-                        style={
-                          styles.imageBox
+                    <div className="product-image-wrapper">
+
+                      <img
+                        src={product.image}
+                        alt={productTitle}
+                        onClick={() =>
+                          handleProductClick(product.id)
                         }
+                        style={{
+                          cursor: "pointer",
+                        }}
+                      />
+
+                      <button
+                        type="button"
+                        className={`action-toggle-btn ${
+                          isProductInCart
+                            ? "remove-state"
+                            : "add-state"
+                        }`}
+                        onClick={() => {
+
+                          if (isProductInCart) {
+                            removeFromCart(product.id);
+                          } else {
+                            addToCart(product);
+                          }
+
+                        }}
                       >
+                        {isProductInCart
+                          ? "- REMOVE"
+                          : "+ ADD"}
+                      </button>
 
-                        <span
-                          style={
-                            styles.productNumber
-                          }
-                        >
-                          {String(
-                            index + 1
-                          ).padStart(2, "0")}
-                        </span>
+                    </div>
 
-                        <img
-                          src={
-                            product.image
-                          }
-                          alt={
-                            product.title
-                          }
-                          onClick={() =>
-                            navigate(
-                              `/product/${product.id}`
-                            )
-                          }
-                          style={
-                            styles.productImage
-                          }
-                          onMouseEnter={(
-                            e
-                          ) => {
-                            e.currentTarget.style.transform =
-                              "scale(1.04)";
-                          }}
-                          onMouseLeave={(
-                            e
-                          ) => {
-                            e.currentTarget.style.transform =
-                              "scale(1)";
-                          }}
-                        />
+                    <div className="product-info">
 
-                        <button
-                          style={
-                            styles.addButton
-                          }
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
+                      <h4>
+                        {productTitle}
+                      </h4>
 
-                            if (
-                              isProductInCart
-                            ) {
-                              removeFromCart(
-                                product.id
-                              );
-                            } else {
-                              addToCart(
-                                product
-                              );
-                            }
-                          }}
-                        >
-                          {isProductInCart
-                            ? "- REMOVE"
-                            : "+ ADD"}
-                        </button>
+                      <p>
+                        ${productPrice.toFixed(2)}
+                      </p>
 
-                      </div>
+                    </div>
 
-                      {/* INFORMATION */}
-
-                      <div
-                        style={
-                          styles.productInfo
-                        }
-                      >
-
-                        <div>
-
-                          <span
-                            style={
-                              styles.productCategory
-                            }
-                          >
-                            {(
-                              product.genderCategory ||
-                              "COLLECTION"
-                            ).toUpperCase()}
-                          </span>
-
-                          <h3
-                            style={
-                              styles.productName
-                            }
-                            onClick={() =>
-                              navigate(
-                                `/product/${product.id}`
-                              )
-                            }
-                          >
-                            {product.displayName ||
-                              product.title}
-                          </h3>
-
-                        </div>
-
-                        <strong
-                          style={
-                            styles.price
-                          }
-                        >
-                          $
-                          {Number(
-                            product.price
-                          ).toFixed(2)}
-                        </strong>
-
-                      </div>
-
-                    </article>
-                  );
-                }
-              )}
+                  </article>
+                );
+              })}
 
             </div>
+
           )}
 
         </main>
 
       </div>
 
-      {/* =====================================================
-          ABOUT
-      ===================================================== */}
-
-      <section
-        id="about"
-        style={styles.about}
-      >
-
-        <div style={styles.aboutNumber}>
-          02
-        </div>
-
-        <div>
-
-          <span style={styles.label}>
-            OUR PHILOSOPHY
-          </span>
-
-          <h2 style={styles.aboutTitle}>
-            LESS,
-            <br />
-            <span>BETTER.</span>
-          </h2>
-
-          <p style={styles.aboutText}>
-            We believe great style does
-            not need to shout. Every piece
-            is selected for its balance of
-            form, function and enduring
-            character.
-          </p>
-
-        </div>
-
-      </section>
-
-      {/* =====================================================
-          FOOTER
-      ===================================================== */}
-
-      <footer
-        id="contact"
-        style={styles.footer}
-      >
-
-        <div>
-          <div style={styles.footerBrand}>
-            ATELIER
-            <span>NOIR</span>
-          </div>
-
-          <p style={styles.footerText}>
-            Modern essentials for a
-            considered wardrobe.
-          </p>
-        </div>
-
-        <div>
-          <span style={styles.footerHeading}>
-            SHOP
-          </span>
-
-          <button
-            style={styles.footerLink}
-            onClick={() =>
-              handleCategoryChange(
-                "men"
-              )
-            }
-          >
-            MEN
-          </button>
-
-          <button
-            style={styles.footerLink}
-            onClick={() =>
-              handleCategoryChange(
-                "women"
-              )
-            }
-          >
-            WOMEN
-          </button>
-
-          <button
-            style={styles.footerLink}
-            onClick={() =>
-              navigate("/shop")
-            }
-          >
-            COLLECTION
-          </button>
-        </div>
-
-        <div>
-          <span style={styles.footerHeading}>
-            COMPANY
-          </span>
-
-          <a
-            href="#about"
-            style={styles.footerLink}
-          >
-            ABOUT
-          </a>
-
-          <a
-            href="#contact"
-            style={styles.footerLink}
-          >
-            CONTACT
-          </a>
-        </div>
-
-        <div>
-          <span style={styles.footerHeading}>
-            FOLLOW
-          </span>
-
-          <a
-            href="#contact"
-            style={styles.footerLink}
-          >
-            INSTAGRAM
-          </a>
-
-          <a
-            href="#contact"
-            style={styles.footerLink}
-          >
-            PINTEREST
-          </a>
-        </div>
-
-      </footer>
-
-      {/* =====================================================
-          ACCOUNT MODAL
-      ===================================================== */}
-
-      {showAuthModal && (
-
-        <div
-          style={styles.modalOverlay}
-          onClick={resetAuthForm}
-        >
-
-          <div
-            style={styles.modal}
-            onClick={(e) =>
-              e.stopPropagation()
-            }
-          >
-
-            <button
-              style={styles.modalClose}
-              onClick={resetAuthForm}
-            >
-              ×
-            </button>
-
-            {user ? (
-
-              <>
-
-                <span style={styles.label}>
-                  ATELIER NOIR
-                </span>
-
-                <h2
-                  style={
-                    styles.modalTitle
-                  }
-                >
-                  WELCOME BACK
-                </h2>
-
-                <p
-                  style={
-                    styles.modalUser
-                  }
-                >
-                  {user.name}
-                </p>
-
-                <p
-                  style={
-                    styles.modalEmail
-                  }
-                >
-                  {user.email}
-                </p>
-
-                <button
-                  style={
-                    styles.fullButton
-                  }
-                  onClick={() => {
-                    setUser(null);
-                    setShowAuthModal(
-                      false
-                    );
-                  }}
-                >
-                  SIGN OUT
-                </button>
-
-              </>
-
-            ) : (
-
-              <>
-
-                <span style={styles.label}>
-                  ATELIER NOIR
-                </span>
-
-                <h2
-                  style={
-                    styles.modalTitle
-                  }
-                >
-                  {authView === "login"
-                    ? "SIGN IN"
-                    : "CREATE ACCOUNT"}
-                </h2>
-
-                {authError && (
-                  <div
-                    style={
-                      styles.authError
-                    }
-                  >
-                    {authError}
-                  </div>
-                )}
-
-                <form
-                  onSubmit={
-                    handleAuthSubmit
-                  }
-                >
-
-                  {authView ===
-                    "signup" && (
-                    <input
-                      type="text"
-                      placeholder="USERNAME"
-                      value={username}
-                      onChange={(e) =>
-                        setUsername(
-                          e.target.value
-                        )
-                      }
-                      style={
-                        styles.formInput
-                      }
-                    />
-                  )}
-
-                  <input
-                    type="email"
-                    placeholder="EMAIL"
-                    value={email}
-                    onChange={(e) =>
-                      setEmail(
-                        e.target.value
-                      )
-                    }
-                    style={
-                      styles.formInput
-                    }
-                  />
-
-                  <input
-                    type="password"
-                    placeholder="PASSWORD"
-                    value={password}
-                    onChange={(e) =>
-                      setPassword(
-                        e.target.value
-                      )
-                    }
-                    style={
-                      styles.formInput
-                    }
-                  />
-
-                  <button
-                    type="submit"
-                    style={
-                      styles.fullButton
-                    }
-                  >
-                    {authView === "login"
-                      ? "SIGN IN"
-                      : "CREATE ACCOUNT"}
-                  </button>
-
-                </form>
-
-                <button
-                  style={
-                    styles.switchAuth
-                  }
-                  onClick={() => {
-                    setAuthView(
-                      authView === "login"
-                        ? "signup"
-                        : "login"
-                    );
-                    setAuthError("");
-                  }}
-                >
-                  {authView === "login"
-                    ? "CREATE A NEW ACCOUNT"
-                    : "BACK TO SIGN IN"}
-                </button>
-
-              </>
-
-            )}
-
-          </div>
-
-        </div>
-
-      )}
-
     </div>
   );
 }
-
-/* ============================================================
-   INLINE STYLES — NO Shop.css NEEDED
-============================================================ */
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background: "#0a0a09",
-    color: "#eeeade",
-    fontFamily:
-      "Arial, Helvetica, sans-serif",
-  },
-
-  loadingPage: {
-    minHeight: "100vh",
-    background: "#0a0a09",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#c5ae59",
-  },
-
-  loadingText: {
-    fontSize: "10px",
-    letterSpacing: "4px",
-  },
-
-  navbar: {
-    height: "70px",
-    padding: "0 5.7%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottom:
-      "1px solid #282722",
-    background: "#0a0a09",
-  },
-
-  brand: {
-    color: "#eeeade",
-    fontSize: "16px",
-    fontWeight: "700",
-    letterSpacing: "5px",
-    lineHeight: "1",
-    cursor: "pointer",
-  },
-
-  navLinks: {
-    display: "flex",
-    alignItems: "center",
-    gap: "32px",
-  },
-
-  navLink: {
-    border: "none",
-    background: "transparent",
-    color: "#817f76",
-    fontSize: "8px",
-    letterSpacing: "2px",
-    cursor: "pointer",
-    textDecoration: "none",
-  },
-
-  navIcons: {
-    display: "flex",
-    gap: "7px",
-  },
-
-  iconButton: {
-    width: "35px",
-    height: "33px",
-    border:
-      "1px solid #302f2a",
-    background: "#11110f",
-    color: "#d7d2c5",
-    cursor: "pointer",
-  },
-
-  cartBadge: {
-    position: "absolute",
-    top: "-7px",
-    right: "-7px",
-    width: "17px",
-    height: "17px",
-    borderRadius: "50%",
-    background: "#c5ae59",
-    color: "#111",
-    fontSize: "8px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  searchBar: {
-    position: "fixed",
-    top: "70px",
-    left: 0,
-    right: 0,
-    zIndex: 100,
-    padding: "15px 5.7%",
-    background: "#11110f",
-    borderBottom:
-      "1px solid #81723c",
-    display: "flex",
-    gap: "10px",
-  },
-
-  searchBarInput: {
-    flex: 1,
-    height: "42px",
-    background: "#0a0a09",
-    border:
-      "1px solid #302f2a",
-    color: "#eeeade",
-    padding: "0 14px",
-    outline: "none",
-  },
-
-  searchClose: {
-    width: "42px",
-    background: "transparent",
-    border:
-      "1px solid #302f2a",
-    color: "#eeeade",
-    cursor: "pointer",
-    fontSize: "18px",
-  },
-
-  shopHero: {
-    padding:
-      "65px 5.7% 50px",
-    display: "flex",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    gap: "40px",
-  },
-
-  label: {
-    display: "block",
-    color: "#968d70",
-    fontSize: "8px",
-    letterSpacing: "3px",
-    marginBottom: "16px",
-  },
-
-  heroTitle: {
-    margin: 0,
-    fontSize: "48px",
-    fontWeight: "300",
-    lineHeight: "0.9",
-    letterSpacing: "2px",
-  },
-
-  heroDescription: {
-    maxWidth: "350px",
-    margin: 0,
-    color: "#6d6a62",
-    fontSize: "11px",
-    lineHeight: "1.8",
-  },
-
-  shopLayout: {
-    display: "flex",
-    gap: "30px",
-    padding:
-      "0 5.7% 80px",
-  },
-
-  sidebar: {
-    width: "145px",
-    flexShrink: 0,
-  },
-
-  sidebarHeading: {
-    color: "#9c988d",
-    fontSize: "8px",
-    letterSpacing: "2px",
-  },
-
-  categoryList: {
-    display: "flex",
-    flexDirection: "column",
-    marginTop: "15px",
-  },
-
-  categoryButton: {
-    width: "100%",
-    padding: "11px 0",
-    textAlign: "left",
-    background: "transparent",
-    borderTop: "none",
-    borderLeft: "none",
-    borderRight: "none",
-    fontSize: "8px",
-    letterSpacing: "2px",
-    cursor: "pointer",
-  },
-
-  sidebarDivider: {
-    height: "1px",
-    background: "#292824",
-    margin:
-      "25px 0 15px",
-  },
-
-  productCount: {
-    color: "#504e48",
-    fontSize: "7px",
-    letterSpacing: "2px",
-  },
-
-  productsArea: {
-    flex: 1,
-    minWidth: 0,
-  },
-
-  toolbar: {
-    display: "flex",
-    gap: "12px",
-    marginBottom: "18px",
-  },
-
-  searchInput: {
-    flex: 1,
-    height: "40px",
-    boxSizing: "border-box",
-    background: "#11110f",
-    border:
-      "1px solid #302f2a",
-    color: "#eeeade",
-    padding: "0 13px",
-    outline: "none",
-    fontSize: "10px",
-  },
-
-  sortSelect: {
-    width: "185px",
-    height: "40px",
-    background: "#11110f",
-    border:
-      "1px solid #302f2a",
-    color: "#aaa69b",
-    padding: "0 12px",
-    outline: "none",
-    fontSize: "8px",
-    letterSpacing: "1px",
-  },
-
-  productGrid: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(3, minmax(0, 1fr))",
-    gap: "16px",
-  },
-
-  productCard: {
-    background: "#151513",
-    border:
-      "1px solid #302f2b",
-    overflow: "hidden",
-    transition:
-      "border-color 0.25s ease",
-  },
-
-  imageBox: {
-    height: "355px",
-    position: "relative",
-    background: "#191917",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-
-  productNumber: {
-    position: "absolute",
-    top: "13px",
-    left: "14px",
-    zIndex: 2,
-    color: "#55534d",
-    fontSize: "7px",
-    letterSpacing: "2px",
-  },
-
-  productImage: {
-    width: "100%",
-    height: "100%",
-    objectFit: "contain",
-    padding: "18px",
-    boxSizing: "border-box",
-    cursor: "pointer",
-    transition:
-      "transform 0.35s ease",
-  },
-
-  addButton: {
-    position: "absolute",
-    right: "12px",
-    bottom: "12px",
-    height: "30px",
-    minWidth: "70px",
-    padding: "0 12px",
-    background: "#10100e",
-    border:
-      "1px solid #81723c",
-    color: "#c5ae59",
-    fontSize: "7px",
-    letterSpacing: "1px",
-    cursor: "pointer",
-  },
-
-  productInfo: {
-    minHeight: "75px",
-    padding:
-      "14px 17px",
-    boxSizing: "border-box",
-    borderTop:
-      "1px solid #292824",
-    display: "flex",
-    alignItems: "center",
-    justifyContent:
-      "space-between",
-    gap: "12px",
-  },
-
-  productCategory: {
-    display: "block",
-    color: "#81775d",
-    fontSize: "6px",
-    letterSpacing: "2px",
-    marginBottom: "7px",
-  },
-
-  productName: {
-    margin: 0,
-    color: "#dedbd1",
-    fontSize: "12px",
-    fontWeight: "400",
-    lineHeight: "1.3",
-    cursor: "pointer",
-  },
-
-  price: {
-    color: "#c5ae59",
-    fontSize: "11px",
-    fontWeight: "500",
-    whiteSpace: "nowrap",
-  },
-
-  empty: {
-    minHeight: "300px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#77746d",
-  },
-
-  about: {
-    margin:
-      "0 5.7% 80px",
-    padding:
-      "70px 8%",
-    display: "grid",
-    gridTemplateColumns:
-      "100px 1fr",
-    gap: "30px",
-    background: "#11110f",
-    borderTop:
-      "1px solid #292824",
-    borderBottom:
-      "1px solid #292824",
-  },
-
-  aboutNumber: {
-    color: "#81723c",
-    fontSize: "8px",
-    letterSpacing: "2px",
-  },
-
-  aboutTitle: {
-    margin: 0,
-    fontSize: "52px",
-    lineHeight: "0.9",
-    fontWeight: "300",
-  },
-
-  aboutText: {
-    maxWidth: "500px",
-    color: "#6d6a62",
-    fontSize: "11px",
-    lineHeight: "1.8",
-    marginTop: "25px",
-  },
-
-  footer: {
-    padding:
-      "55px 5.7% 40px",
-    display: "grid",
-    gridTemplateColumns:
-      "2fr 1fr 1fr 1fr",
-    gap: "40px",
-    borderTop:
-      "1px solid #292824",
-  },
-
-  footerBrand: {
-    color: "#eeeade",
-    fontSize: "16px",
-    fontWeight: "700",
-    letterSpacing: "5px",
-  },
-
-  footerText: {
-    color: "#55534d",
-    fontSize: "9px",
-    lineHeight: "1.7",
-    maxWidth: "230px",
-  },
-
-  footerHeading: {
-    display: "block",
-    color: "#81775d",
-    fontSize: "7px",
-    letterSpacing: "2px",
-    marginBottom: "15px",
-  },
-
-  footerLink: {
-    display: "block",
-    marginBottom: "9px",
-    background: "transparent",
-    border: "none",
-    padding: 0,
-    color: "#6d6a62",
-    textDecoration: "none",
-    fontSize: "8px",
-    letterSpacing: "1px",
-    cursor: "pointer",
-  },
-
-  modalOverlay: {
-    position: "fixed",
-    inset: 0,
-    zIndex: 500,
-    background:
-      "rgba(0,0,0,0.82)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "20px",
-  },
-
-  modal: {
-    position: "relative",
-    width: "100%",
-    maxWidth: "410px",
-    padding: "45px",
-    boxSizing: "border-box",
-    background: "#11110f",
-    border:
-      "1px solid #81723c",
-  },
-
-  modalClose: {
-    position: "absolute",
-    right: "15px",
-    top: "12px",
-    background: "transparent",
-    border: "none",
-    color: "#aaa69b",
-    fontSize: "20px",
-    cursor: "pointer",
-  },
-
-  modalTitle: {
-    margin:
-      "0 0 20px",
-    fontSize: "28px",
-    fontWeight: "300",
-    letterSpacing: "2px",
-  },
-
-  modalUser: {
-    color: "#c5ae59",
-    fontSize: "14px",
-  },
-
-  modalEmail: {
-    color: "#6d6a62",
-    fontSize: "10px",
-    marginBottom: "25px",
-  },
-
-  formInput: {
-    display: "block",
-    width: "100%",
-    height: "42px",
-    boxSizing: "border-box",
-    marginBottom: "12px",
-    padding: "0 13px",
-    background: "#0a0a09",
-    border:
-      "1px solid #302f2a",
-    color: "#eeeade",
-    outline: "none",
-    fontSize: "10px",
-  },
-
-  fullButton: {
-    width: "100%",
-    height: "42px",
-    marginTop: "5px",
-    background: "transparent",
-    border:
-      "1px solid #81723c",
-    color: "#c5ae59",
-    cursor: "pointer",
-    fontSize: "8px",
-    letterSpacing: "2px",
-  },
-
-  goldButton: {
-    padding: "12px 25px",
-    background: "transparent",
-    border:
-      "1px solid #81723c",
-    color: "#c5ae59",
-    cursor: "pointer",
-    letterSpacing: "2px",
-    fontSize: "8px",
-  },
-
-  switchAuth: {
-    display: "block",
-    margin:
-      "20px auto 0",
-    background: "transparent",
-    border: "none",
-    color: "#77746d",
-    cursor: "pointer",
-    fontSize: "8px",
-    letterSpacing: "1px",
-  },
-
-  authError: {
-    marginBottom: "15px",
-    padding: "10px",
-    background: "#261313",
-    border:
-      "1px solid #633030",
-    color: "#d58a8a",
-    fontSize: "9px",
-  },
-};
 
 export default Shop;
