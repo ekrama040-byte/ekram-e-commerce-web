@@ -2,8 +2,10 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import { BrowserRouter } from "react-router-dom";
-import { CartProvider } from "./Context/CartContext";
-import { AuthProvider } from "./Context/AuthContext"; 
+
+// Cleaned up, explicitly typed path targets:
+import { CartProvider } from "./Context/CartContext.jsx";
+import { AuthProvider } from "./Context/AuthContext.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
