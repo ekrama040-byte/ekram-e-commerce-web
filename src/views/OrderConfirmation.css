@@ -1,0 +1,221 @@
+.confirmation-page {
+  background-color: #000000;
+  color: #ffffff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 40px 6%;
+  font-family: inherit;
+}
+
+/* Header Navbar Rules */
+.confirmation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #111111;
+  padding-bottom: 20px;
+}
+
+.brand-sub {
+  font-size: 0.75rem;
+  letter-spacing: 3px;
+  color: #666666;
+  font-weight: 500;
+}
+
+.back-home-txt {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.back-home-txt:hover {
+  color: #888888;
+}
+
+/* Central Manifest Layout Blocks */
+.confirmation-main {
+  max-width: 800px;
+  margin: 60px auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 50px;
+}
+
+.confirmation-hero {
+  text-align: center;
+}
+
+.confirmation-hero h1 {
+  font-size: 3.5rem;
+  font-weight: 300;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  margin: 0 0 25px 0;
+}
+
+.confirmation-hero h1 em {
+  font-style: normal;
+  font-weight: 400;
+  color: #d4af37; /* Subtle refined gold signature accent */
+  letter-spacing: 2px;
+}
+
+.luxury-divider-line {
+  width: 60px;
+  height: 1px;
+  background-color: #333333;
+  margin: 0 auto 25px auto;
+}
+
+.thank-you-msg {
+  font-size: 1.05rem;
+  color: #cccccc;
+  line-height: 1.6;
+  max-width: 550px;
+  margin: 0 auto 35px auto;
+}
+
+/* Unique Order Tag Badge styling */
+.order-badge {
+  display: inline-flex;
+  flex-direction: column;
+  background-color: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  padding: 15px 35px;
+  letter-spacing: 1px;
+}
+
+.badge-label {
+  font-size: 0.65rem;
+  color: #555555;
+  letter-spacing: 3px;
+  margin-bottom: 5px;
+}
+
+.order-badge strong {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #ffffff;
+  letter-spacing: 2px;
+}
+
+/* Logistics Information Split Grid Cards */
+.logistics-details-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 25px;
+}
+
+.logistics-card {
+  background-color: #050505;
+  border: 1px solid #111111;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.logistics-card h3 {
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  color: #555555;
+  margin: 0 0 20px 0;
+  font-weight: 600;
+}
+
+.client-name {
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.address-line {
+  color: #888888;
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* Highlighted Delivery Segment Rules */
+.highlighted-card {
+  border-color: #222222;
+  background-color: #0a0a0a;
+}
+
+.delivery-date {
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: #ffffff;
+  margin: 0 0 12px 0;
+  letter-spacing: 1px;
+}
+
+.delivery-note {
+  font-size: 0.8rem;
+  color: #666666;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Bottom Action Buttons Row control layout */
+.action-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.continue-shopping-btn {
+  background-color: #ffffff;
+  color: #000000;
+  border: 1px solid #ffffff;
+  padding: 16px 45px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  transition: all 0.3s ease;
+}
+
+.continue-shopping-btn span {
+  transition: transform 0.3s;
+}
+
+.continue-shopping-btn:hover {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.continue-shopping-btn:hover span {
+  transform: translateX(5px);
+}
+
+/* Footer layout details standard formatting rules */
+.confirmation-footer {
+  text-align: center;
+  border-top: 1px solid #111111;
+  padding-top: 20px;
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  color: #444444;
+}
+
+/* Responsive Viewports */
+@media (max-width: 650px) {
+  .logistics-details-panel {
+    grid-template-columns: 1fr;
+  }
+  .confirmation-hero h1 {
+    font-size: 2.5rem;
+  }
+}
