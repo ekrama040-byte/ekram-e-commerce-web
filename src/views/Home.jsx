@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import Hero from "../components/Hero";
 import { useClothingApi } from "../hooks/useClothingApi";
 import { useNavigate, Link } from "react-router-dom";
-import { useCart } from "./Context/CartContext";
+import { useCart } from "../Context/CartContext";
 
 export default function Home() {
   // ================= SEARCH & AUTH STATES =================

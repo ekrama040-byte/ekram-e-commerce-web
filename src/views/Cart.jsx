@@ -1,6 +1,6 @@
 
 import { useNavigate } from "react-router-dom";
-import { useCart } from "./Context/CartContext";
+import { useCart } from "../Context/CartContext";
 import { useMemo } from "react";
 import "./Cart.css"; // Ensure this matches your file naming!
 
