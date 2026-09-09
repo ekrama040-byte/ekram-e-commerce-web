@@ -8,7 +8,7 @@ import PaymentPage from "./views/PaymentPage";
 
 import Cart from "./views/Cart";
 import OrderConfirmation from "./views/OrderConfirmation";
-import { CartProvider } from './context/CartContext'; 
+import { CartProvider } from './Context/CartContext'; 
 import "./App.css";
 
 function App() {
