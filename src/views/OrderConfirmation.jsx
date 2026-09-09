@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useMemo } from "react";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../Context/CartContext";
 import "./OrderConfirmation.css";
 
 function OrderConfirmation() {

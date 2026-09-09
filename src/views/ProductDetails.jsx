@@ -1,6 +1,6 @@
 // 
 import { useParams, useNavigate } from "react-router-dom";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../Context/CartContext";
 import { useState, useMemo } from "react";
 import { useClothingApi } from "../hooks/useClothingApi";
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../Context/CartContext";
 
 export default function PaymentPage() {
   const [paymentMethod, setPaymentMethod] = useState("card");
