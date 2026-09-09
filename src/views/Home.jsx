@@ -153,8 +153,8 @@ export default function Home() {
           onClick={() => navigate("/")}
           style={{ cursor: "pointer" }}
         >
-          ATELIER
-          <span>NOIR</span>
+          ORVEX 
+          <span>STUDIO</span>
         </div>
 
         <div className="nav-links">
@@ -172,7 +172,7 @@ export default function Home() {
             onClick={() => setIsSearchOpen(!isSearchOpen)}
             className={isSearchOpen ? "active-icon" : ""}
           >
-            ⌕
+           ⌕
           </button>
 
           {/* Account */}
@@ -330,14 +330,41 @@ export default function Home() {
                   </article>
                 );
               })}
-              {/* <div style={{display: "flex", justifyContent: "center", width: "100%", marginLeft: auto, marginRight: "auto"}}>
-              <button
-            onClick={() =>
-              navigate("/shop")
-            } style={{backgroundColor: "#000", color: "#fff", padding: "0.75rem 1.5rem", border: "none", cursor: "pointer" ,display: "flex", justifyContent: "center", alignItems: "center", marginTop: "1rem", fontSize: "1rem", fontWeight: "bold"}}
-          >
-            Collection
-          </button></div> */}
+              <div style={{ display: "flex", justifyContent: "center", width: "100%", marginTop: "3.5rem", marginBottom: "4rem" }}>
+  <button
+    onClick={() => navigate("/shop")}
+    className="orvex-cta-button"
+    style={{
+      backgroundColor: "transparent",
+      color: "#ffffff",
+      padding: "1rem 2.5rem",
+      border: "1px solid rgba(255, 255, 255, 0.3)",
+      cursor: "pointer",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      fontSize: "0.9rem",
+      fontWeight: "500",
+      letterSpacing: "3px",
+      textTransform: "uppercase",
+      transition: "all 0.3s ease",
+      borderRadius: "0px" // Sharp, architectural edges
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.backgroundColor = "#352d04";
+      e.currentTarget.style.color = "#000000";
+      e.currentTarget.style.borderColor = "#944e0c";
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.backgroundColor = "transparent";
+      e.currentTarget.style.color = "#91660b";
+      e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.3)";
+    }}
+  >
+    Explore Collection
+  </button>
+</div>
+
             </div>
           )}
 

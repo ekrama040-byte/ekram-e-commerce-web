@@ -15,6 +15,58 @@ export default function ProductDetails() {
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState("M");
   const [activeImage, setActiveImage] = useState(0);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearchInput, setIsSearchInput] = useState("");
+  const { cart, addToCart, removeFromCart } = useCart();
+  const totalCartItems = useMemo(() => {
+    return cart.reduce((total, item) => total + item.quantity, 0);
+  }, [cart]);
+
+  // ================= ERROR =================
+  if (error) {
+    return (
+      <div className="dashboard-error">
+        <h2>Something went wrong</h2>
+        <p>{error}</p>
+      </div>
+    );
+  }
+
+  {isSearchOpen && (
+        <div className="search-overlay-bar">
+          <input
+            type="text"
+            placeholder="Search the collection..."
+            value={isSearchInput}
+            onChange={(e) =>
+              setIsSearchInput(e.target.value)
+            }
+            onKeyDown={(e) => {
+              if (
+                e.key === "Enter" &&
+                isSearchInput.trim()
+              ) {
+                navigate(
+                  `/shop?search=${encodeURIComponent(
+                    isSearchInput.trim()
+                  )}`
+                );
+
+                setIsSearchOpen(false);
+              }
+            }}
+            autoFocus
+          />
+
+          <button
+            onClick={() => setIsSearchOpen(false)}
+            aria-label="Close search"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+  
 
   // 3. Find target product profile matching the active URL route string safely
   const product = useMemo(() => {
@@ -93,14 +145,30 @@ export default function ProductDetails() {
         </button>
 
         <div className="brand" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-          ATELIER
-          <span>NOIR</span>
+          ORVEX 
+          <span>STUDIO</span>
         </div>
 
         <div className="nav-icons">
-          <button aria-label="Search" onClick={() => navigate("/shop")}>⌕</button>
-          <button aria-label="Account">♙</button>
-          <button aria-label="Cart" onClick={() => navigate("/cart")}>🛒</button>
+          <button
+            aria-label="Search"
+            onClick={() => setIsSearchOpen(!isSearchOpen)}
+            className={isSearchOpen ? "active-icon" : ""}
+          >
+            ⌕
+          </button>
+          <button
+            className="cart-nav-btn"
+            aria-label="Cart"
+            onClick={() => navigate("/cart")}
+          >
+            🛒
+            {totalCartItems > 0 && (
+              <span className="cart-badge-counter">
+                {totalCartItems}
+              </span>
+            )}
+          </button>
         </div>
       </nav>
 
@@ -239,19 +307,40 @@ export default function ProductDetails() {
         </section>
       </main>
 
-      {/* RELATED PRODUCTS FOOTER COMPONENT */}
-      <section className="related-products-section">
-        <h3>RELATED ESSENTIALS</h3>
-        <div className="related-grid">
-          {relatedProducts.map((item) => (
-            <div key={item.id} className="related-card" onClick={() => { navigate(`/product/${item.id}`); setQuantity(1); }}>
-              <img src={item.image} alt={item.title} />
-              <h4>{item.displayName || item.title}</h4>
-              <strong>${item.price.toFixed(2)}</strong>
-            </div>
-          ))}
+      {/* {/* RELATED PRODUCTS FOOTER COMPONENT */}
+<section className="related-products-section" style={{ padding: "40px 5%", backgroundColor: "#0b0b0b", color: "#fff" }}>
+  <h3 style={{ fontSize: "1.2rem", fontWeight: "600", letterSpacing: "2px", marginBottom: "24px", color: "#a5a5a5" }}>
+    RELATED ESSENTIALS
+  </h3>
+  
+  <div className="related-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "24px" }}>
+    {relatedProducts.map((item) => (
+      <div 
+        key={item.id} 
+        className="related-card" 
+        onClick={() => { navigate(`/product/${item.id}`); setQuantity(1); }}
+        style={{ cursor: "pointer", backgroundColor: "#121212", padding: "16px", borderRadius: "4px", display: "flex", flexDirection: "column", gap: "12px" }}
+      >
+        {/* THIS PREVENTS THE IMAGE FROM STRETCHING MASSIVELY */}
+        <div style={{ width: "100%", height: "240px", backgroundColor: "#fff", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", borderRadius: "2px" }}>
+          <img 
+            src={item.image} 
+            alt={item.title} 
+            style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", padding: "12px" }} 
+          />
         </div>
-      </section>
-    </div>
-  );
+        
+        <h4 style={{ fontSize: "0.95rem", fontWeight: "400", margin: "0", color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {item.displayName || item.title}
+        </h4>
+        
+        <strong style={{ fontSize: "1.1rem", fontWeight: "600", color: "#fff" }}>
+          ${item.price.toFixed(2)}
+        </strong>
+      </div>
+    ))}
+  </div>
+</section>
+</div>
+);
 }

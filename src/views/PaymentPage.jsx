@@ -73,8 +73,8 @@ const { clearCart } = useCart();
         </button>
 
         <div className="brand">
-          ATELIER
-          <span>NOIR</span>
+          ORVEX 
+          <span>STUDIO</span>
         </div>
 
         <div className="secure-checkout-label">

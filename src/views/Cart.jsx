@@ -51,7 +51,7 @@ function Cart() {
           ← CONTINUE SHOPPING
         </button>
         <div className="brand" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-          ATELIER<span>NOIR</span>
+          ORVEX <span>STUDIO</span>
         </div>
       </header>
 

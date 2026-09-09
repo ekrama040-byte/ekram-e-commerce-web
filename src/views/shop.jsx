@@ -116,7 +116,7 @@ function Shop() {
         </button>
 
         <div className="brand">
-          ATELIER<span>NOIR</span>
+          ORVEX <span>STUDIO</span>
         </div>
 
         <button className="cart-nav-btn" aria-label="Cart" onClick={() => navigate("/cart")}>

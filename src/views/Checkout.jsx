@@ -30,7 +30,7 @@ function Checkout() {
         </button>
 
         <div className="checkout-logo">
-          ATELIER <span>NOIR</span>
+          ORVEX<span>STUDIO</span>
         </div>
 
         <div className="checkout-secure">

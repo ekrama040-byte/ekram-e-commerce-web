@@ -43,7 +43,7 @@ function OrderConfirmation() {
   return (
     <div className="confirmation-page">
       <header className="confirmation-header">
-        <span className="brand-sub">ATELIER NOIR / ORDER RECEIPT</span>
+        <span className="brand-sub">ORVEX STUDIO / ORDER RECEIPT</span>
         <button className="back-home-txt" onClick={() => navigate("/")}>← RETURN TO HOME</button>
       </header>
 
